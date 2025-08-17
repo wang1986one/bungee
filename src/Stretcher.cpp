@@ -20,6 +20,8 @@ Internal::Stretcher::Stretcher(SampleRates sampleRates, int channelCount, int lo
 {
 	for (auto &grain : grains.vector)
 		grain = std::make_unique<Grain>(log2SynthesisHop, channelCount);
+
+	Fourier::resize<true>(grains[0].log2TransformLength, 1, temporary);
 }
 
 InputChunk Internal::Stretcher::specifyGrain(const Request &request, double bufferStartPosition)
@@ -96,12 +98,15 @@ void Internal::Stretcher::synthesiseGrain(OutputChunk &outputChunk)
 
 		BUNGEE_ASSERT2(!grain.passthrough || grain.rotation.topRows(grain.validBinCount).isZero());
 
-		auto theta = grain.rotation.topRows(grain.validBinCount).cast<float>() * (std::numbers::pi_v<float> / 0x8000);
-		auto t = theta.cos() + theta.sin() * std::complex<float>{0, 1};
+		auto t = temporary.topRows(grain.validBinCount);
+
+		t = grain.rotation.topRows(grain.validBinCount).cast<float>() * (std::complex<float>{0, std::numbers::pi_v<float> / 0x8000});
+		t = t.exp();
+
 		if (grain.reverse())
 			grain.transformed.topRows(grain.validBinCount) = grain.transformed.topRows(grain.validBinCount).conjugate().colwise() * t;
 		else
-			grain.transformed.topRows(grain.validBinCount).colwise() *= t;
+			grain.transformed.topRows(grain.validBinCount) = grain.transformed.topRows(grain.validBinCount).colwise() * t;
 
 		transforms.inverse(grain.log2TransformLength, output.inverseTransformed, grain.transformed);
 	}

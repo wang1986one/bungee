@@ -3,6 +3,8 @@
 
 #include "Instrumentation.h"
 
+#include "Assert.h"
+
 #if defined(__ANDROID__)
 #	include <android/log.h>
 #elif defined(__APPLE__)
@@ -13,6 +15,8 @@
 
 #include <cstdarg>
 #include <cstdlib>
+
+#include <Eigen/Core>
 
 namespace Bungee::Internal {
 
@@ -53,11 +57,19 @@ Instrumentation::Call::Call(Instrumentation *instrumentation, int sequence)
 		std::abort();
 	}
 	instrumentation->expected = (sequence + 1) % 3;
+
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+	Eigen::internal::set_is_malloc_allowed(false);
+#endif
 }
 
 Instrumentation::Call::~Call()
 {
 	threadLocal = nullptr;
+
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+	Eigen::internal::set_is_malloc_allowed(true);
+#endif
 }
 
 } // namespace Bungee::Internal

@@ -30,10 +30,11 @@ else()
 endif()  
 target_include_directories(bungee_library PRIVATE  submodules/eigen submodules .)
 target_compile_definitions(bungee_library PRIVATE
+  BUNGEE_VISIBILITY=${BUNGEE_EXPORT}
   BUNGEE_SELF_TEST=${BUNGEE_SELF_TEST}
   eigen_assert=BUNGEE_ASSERT1
   EIGEN_DONT_PARALLELIZE=1
-  BUNGEE_VISIBILITY=${BUNGEE_EXPORT}
+  $<$<CONFIG:Debug>:EIGEN_RUNTIME_NO_MALLOC=1>
 )
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp PROPERTIES COMPILE_DEFINITIONS BUNGEE_VERSION=\"${BUNGEE_VERSION}\")
 target_compile_options(bungee_library PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-fwrapv>)

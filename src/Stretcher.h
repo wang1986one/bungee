@@ -23,6 +23,7 @@ struct Stretcher :
 	Grains grains;
 	Output output;
 	Eigen::ArrayXXf previousWindowedInput;
+	Eigen::ArrayXcf temporary;
 
 	Stretcher(SampleRates sampleRates, int channelCount, int log2SynthesisHopAdjust);
 

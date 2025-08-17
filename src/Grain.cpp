@@ -94,7 +94,13 @@ void Grain::overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHe
 	const auto frameCount = inputChunk.end - inputChunk.begin;
 	const auto activeRows = frameCount - muteFrameCountHead - muteFrameCountTail;
 
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+	Eigen::internal::set_is_malloc_allowed(true);
+#endif
 	inputCopy.resize(frameCount, input.cols());
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+	Eigen::internal::set_is_malloc_allowed(false);
+#endif
 
 	inputCopy.topRows(muteFrameCountHead).setZero();
 	inputCopy.middleRows(muteFrameCountHead, activeRows) = input.middleRows(muteFrameCountHead, activeRows);
