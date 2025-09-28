@@ -61,7 +61,7 @@ struct Grain
 
 	Grain(int log2SynthesisHop, int channelCount);
 
-	InputChunk specify(const Request &request, Grain &previous, SampleRates sampleRates, int log2SynthesisHop, double bufferStartPosition);
+	InputChunk specify(const Request &request, Grain &previous, SampleRates sampleRates, int log2SynthesisHop, double bufferStartPosition, Internal::Instrumentation &instrumentation);
 
 	bool reverse() const
 	{
@@ -75,7 +75,7 @@ struct Grain
 
 	void applyEnvelope();
 
-	auto inputChunkMap(const float *data, std::ptrdiff_t stride, int &muteFrameCountHead, int &muteFrameCountTail, const Grain &previous)
+	auto inputChunkMap(const float *data, std::ptrdiff_t stride, int &muteFrameCountHead, int &muteFrameCountTail, const Grain &previous, Internal::Instrumentation &instrumentation)
 	{
 		const auto frameCount = inputChunk.end - inputChunk.begin;
 
@@ -94,13 +94,13 @@ struct Grain
 		Map m((float *)data, frameCount, transformed.cols(), Stride(stride));
 		BUNGEE_ASSERT2(!m.middleRows(muteFrameCountHead, m.rows() - muteFrameCountHead - muteFrameCountTail).hasNaN());
 
-		if (Internal::Instrumentation::threadLocal->enabled || Bungee::Assert::level)
-			overlapCheck(m, muteFrameCountHead, muteFrameCountTail, previous);
+		if (instrumentation.enabled || Bungee::Assert::level)
+			overlapCheck(m, muteFrameCountHead, muteFrameCountTail, previous, instrumentation);
 
 		return m;
 	}
 
-	void overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHead, int muteFrameCountTail, const Grain &previous);
+	void overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHead, int muteFrameCountTail, const Grain &previous, Internal::Instrumentation &instrumentation);
 
 	Eigen::Ref<Eigen::ArrayXXf> resampleInput(Eigen::Ref<Eigen::ArrayXXf> input, int log2WindowLength, int &muteFrameCountHead, int &muteFrameCountTail);
 };

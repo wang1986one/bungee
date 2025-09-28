@@ -6,6 +6,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
 
 namespace Bungee::Assert {
 
@@ -30,7 +31,6 @@ FloatingPointExceptions::FloatingPointExceptions(int allowed) :
 #	ifdef __GLIBC__
 	fedisableexcept(FE_ALL_EXCEPT);
 	feenableexcept(FE_ALL_EXCEPT & ~allowed);
-	std::signal(SIGFPE, [](int signum) { std::abort(); });
 #	endif
 }
 
@@ -49,6 +49,31 @@ FloatingPointExceptions::~FloatingPointExceptions()
 	auto success = !std::fesetenv(&original);
 	BUNGEE_ASSERT1(success);
 }
+
+#endif
+
+#ifdef BUNGEE_PETRIFY
+
+struct Petrification
+{
+	static void petrify(int signalNumber)
+	{
+		psignal(signalNumber, "Bungee petrified");
+		fprintf(stderr, "Bungee PID=%d\n", getpid());
+		while (true)
+			sleep(1);
+	}
+
+	Petrification()
+	{
+		signal(SIGSEGV, petrify);
+		signal(SIGABRT, petrify);
+		signal(SIGILL, petrify);
+		signal(SIGFPE, petrify);
+	}
+};
+
+static Petrification petrification;
 
 #endif
 
