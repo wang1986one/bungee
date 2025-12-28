@@ -33,7 +33,7 @@ void Grains::prepare()
 void Grains::rotate()
 {
 	std::unique_ptr<Grain> grain = std::move(vector.back());
-	for (int i = vector.size() - 1; i > 0; --i)
+	for (auto i = vector.size() - 1; i > 0; --i)
 		vector[i] = std::move(vector[i - 1]);
 	vector.front() = std::move(grain);
 

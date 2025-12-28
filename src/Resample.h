@@ -210,8 +210,8 @@ void resample(Internal &internal, External &external, double ratioBegin, double 
 			BUNGEE_ASSERT1(ratioEnd > 0);
 		}
 
-		external.unmutedBegin = std::clamp<int>(external.unmutedBegin, 0, external.activeFrameCount);
-		external.unmutedEnd = std::clamp<int>(external.unmutedEnd, external.unmutedBegin, external.activeFrameCount);
+		external.unmutedBegin = std::clamp<ptrdiff_t>(external.unmutedBegin, 0, external.activeFrameCount);
+		external.unmutedEnd = std::clamp<ptrdiff_t>(external.unmutedEnd, external.unmutedBegin, external.activeFrameCount);
 
 		if (ratioBegin == ratioEnd)
 			resampleSpecial<Interpolation, Mode, true>(internal, external, ratioBegin, ratioEnd);
