@@ -1,25 +1,21 @@
-# Bungee: Audio time and pitch library
+# Bungee: Audio Time-Stretching & Pitch-Shifting Library
 
-Bungee is a real-time library for stretching audio. It can:
-* Adjust the playback speed of audio without affecting pitch
-* Adjust pitch, or transpose, audio without affecting playback speed
-* Or any combination of pitch and playhead position manipulation.
+Bungee is a modern, open-source C++ library for high-quality audio time-stretching and pitch-shifting in real-time or offline. Easily integrate advanced audio timescale processing into your application.
 
-Bungee is unique in its controllability, allowing continually changing pitch and position with seamless support of zero and negative playback speeds. So it can be used for a "smooth scrub" or for rendering lifelike audio for slow-motion videos.
-
-## Features
-
-* Simple, fast, with good quality audio output (hear some [comparisons](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other approaches)
-* Reasonably low latency (of the order of 20ms for speed and pitch controls and 40ms from audio input to output)
-* Frequency-domain phase-vocoder-based algorithm
+Bungee can adjust the speed of audio without affecting pitch; transpose audio pitch without affecting speed; or any combination of playhead position and pitch manipulation.
+* Simple, fast phase-vocoder-based algorithm with good quality audio output ([🎧  hear some comparisons](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other algorithms)
 * Modern C++ for clean and resilient code
-* Static library with a command-line utility that operates on WAV files
 
-## License
+Bungee is unique in its controllability, allowing continually changing audio tempo and pitch manipulation with seamless support of zero and negative playback speeds. So it can be used for a "smooth scrub" or for rendering lifelike audio for slow-motion videos.
 
-Bungee is permissively licensed under the Mozilla Public License Version 2.0.
+ ⭐️ _To support Bungee, please consider [giving this repo a star](https://github.com/bungee-audio-stretch/bungee/stargazers)_ .
 
-## Getting started
+![GitHub Release](https://img.shields.io/github/v/release/bungee-audio-stretch/bungee)
+![GitHub License](https://img.shields.io/github/license/bungee-audio-stretch/bungee)
+![GitHub Downloads](https://img.shields.io/github/downloads/bungee-audio-stretch/bungee/total)
+![GitHub Repo stars](https://img.shields.io/github/stars/bungee-audio-stretch/bungee)
+
+## Getting started with Bungee Audio Time-Stretching
 
 Bungee's dependencies are managed as git submodules; so clone like this:
 ```
@@ -39,11 +35,11 @@ After a successful build, run the bungee executable
 ./bungee --help
 ```
 
-## Using pre-built Bungee
+## Integrating Bungee C++ Audio Library
 
 Every commit pushed to this repo's main branch is automatically tagged and built into a release. Each release contains Bungee built as a shared library together with headers, sample code and a sample command-line executable that uses the shared library. Releases support common platforms including Linux, Windows, MacOS, Android and iOS.
 
-## Using Bungee from your own code
+## Example: Real-Time Audio Pitch-Shifting in C++
 
 Bungee operates on discrete, overlapping "grains" of audio, typically processing around 100 grains per second. Parameters such as position and pitch are provided on a per-grain basis so that they can be changed continuously as audio rendering progresses. This means that only minimal parameters are required for  instantiation.
 
@@ -137,24 +133,33 @@ The sample `bungee` command-line utility also uses:
 
 See this repo's [.gitmodules](.gitmodules) for versioned links to these projects.
 
+## License
+
+Bungee is permissively licensed under the Mozilla Public License Version 2.0.
+
 ## Support
 
-Please use Github issues to report any problems and to suggest possible improvements to Bungee.
+Bungee's goal is to be the _best open source audio timescale manipulation library_ available. User feedback is invaluable: please use Github issues to report anything that could be improved.
 
-## Bungee Pro
-
-Bungee Pro is a closed-source commercial product aimed to offer a seamless upgrade path from this open-source project. It uses novel algorithms for sharp and clear professional-grade audio and runs at least as fast as Bungee, thanks to platform-specific performance optimisations.
-
-Whilst open-source Bungee strives to be the best open-source audio time stretch algorithm, the goal of Bungee Pro is to be the best algorithm available to license commercially.
-
-Try Bungee Pro [now in your browser](https://bungee.parabolaresearch.com/change-audio-speed-pitch.html), see a [comparison](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other techniques.
-
-Consider licensing Bungee Pro for:
-* Powerful stretch algorithms adaptive to all genres of speech, music and sound with subjective transparency up to infinite time stretch
-* Novel processing techniques that deliver crisp transients and preserve vocal and instrumental timbre
-* Performance optimisations for:
-    * Web AudioWorklet with SIMD128 WebAssembly
-    * Arm NEON for Android, iOS and MacOS
-    * x86-64 SIMD for Linux, Windows and MacOS
-* A ready-to-use Web Audio implementation 
-* Professional support
+> ## Bungee Pro
+> 
+> Bungee Pro is a commercial product providing an upgrade path from this open-source project. It uses novel algorithms for sharp and clear professional-grade audio and runs at least as fast as Bungee, thanks to platform-specific performance optimisations.
+> 
+> Whilst open-source Bungee aims to be the best open-source audio time stretch algorithm, the goal of Bungee Pro is to be the _best algorithm available commercially_.
+> 
+> * Novel processing techniques that deliver crisp transients and preserve vocal and instrumental timbre
+> * Adaptive to all genres of speech, music and sound with subjective transparency up to infinite time stretch
+> * Performance optimisations for:
+>    * Web AudioWorklet with SIMD128 WebAssembly
+>    * Arm NEON for Android, iOS and MacOS
+>    * x86-64 SIMD for Linux, Windows and MacOS
+> * A ready-to-use Web Audio implementation 
+> * Professional support
+>
+> Bungee Pro is used in a wide variety of applications including movie post production software, educational apps and musicians' tools. 
+>
+> [Listen to an extensive evaluation](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) of Bungee and Bungee Pro against state-of-the-art techniques.
+>
+> | ![waveform animation](./README.md-waveform.png) | Try the [WebAssembly demo](https://bungee.parabolaresearch.com/change-audio-speed-pitch.html)  of Bungee Pro in your browser.|
+> |--|--|
+>
