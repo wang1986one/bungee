@@ -30,7 +30,7 @@ int main(int argc, const char *argv[])
 	if (pushSampleCount)
 	{
 		// This code demonstrates the usage of the easier to use, positive-speed-only `Bungee::Stream` API.
-		// See the `else` branch for equivalent usage of the `Bungee::Stretcher` API.
+		// See the `else` branch for equivalent usage of the granular `Bungee::Stretcher` API.
 
 		const auto maxSpeed = request.speed;
 
@@ -39,12 +39,12 @@ int main(int argc, const char *argv[])
 		else
 			std::cout << "Using Bungee::Stream::process with " << pushSampleCount << " samples per call\n";
 
-		const int maxInputSampleCount = std::abs(pushSampleCount);
-		const int maxOutputSampleCount = std::ceil((maxInputSampleCount * processor.sampleRates.output) / (maxSpeed * processor.sampleRates.input));
+		const int maxInputFrameCount = std::abs(pushSampleCount);
+		const int maxOutputSampleCount = std::ceil((maxInputFrameCount * processor.sampleRates.output) / (maxSpeed * processor.sampleRates.input));
 
 		CommandLine::Processor::OutputChunkBuffer outputChunkBuffer(maxOutputSampleCount, processor.channelCount);
 
-		Stream stream(stretcher, maxInputSampleCount, processor.channelCount);
+		Stream stream(stretcher, maxInputFrameCount, processor.channelCount);
 
 		std::vector<const float *> inputChannelPointers(processor.channelCount);
 
@@ -66,18 +66,18 @@ int main(int argc, const char *argv[])
 						inputChannelPointers[c] = nullptr; // indicates silent segment
 			}
 
-			const double outputSampleCountIdeal = (inputSampleCount * processor.sampleRates.output) / (request.speed * processor.sampleRates.input);
+			const double outputFrameCountIdeal = (inputSampleCount * processor.sampleRates.output) / (request.speed * processor.sampleRates.input);
 
 			// This is the important line: it is a very simple streaming interface.
-			const auto outputSampleCountActual = stream.process(inputChannelPointers[0] ? inputChannelPointers.data() : nullptr, outputChunkBuffer.channelPointers.data(), inputSampleCount, outputSampleCountIdeal, request.pitch);
+			const auto outputFrameCountActual = stream.process(inputChannelPointers[0] ? inputChannelPointers.data() : nullptr, outputChunkBuffer.channelPointers.data(), inputSampleCount, outputFrameCountIdeal, request.pitch);
 
 			if (false)
 				std::cout << "current latency is " << stream.latency() / processor.sampleRates.input << "seconds\n";
 
 			const auto positionEnd = stream.outputPosition();
-			const auto positionBegin = positionEnd - outputSampleCountActual * (request.speed * processor.sampleRates.input / (processor.sampleRates.output));
+			const auto positionBegin = positionEnd - outputFrameCountActual * (request.speed * processor.sampleRates.input / (processor.sampleRates.output));
 
-			auto outputChunk = outputChunkBuffer.outputChunk(outputSampleCountActual, positionBegin, positionEnd);
+			auto outputChunk = outputChunkBuffer.outputChunk(outputFrameCountActual, positionBegin, positionEnd);
 			done = processor.write(outputChunk);
 
 			position += inputSampleCount;
@@ -85,7 +85,7 @@ int main(int argc, const char *argv[])
 	}
 	else
 	{
-		// This code demonstrates the low-level, flexible and best performing `Bungee::Stretcher` API.
+		// This code demonstrates the low-level, flexible and best performing granular `Bungee::Stretcher` API.
 
 		processor.restart(request);
 		stretcher.preroll(request);

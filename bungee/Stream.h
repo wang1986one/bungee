@@ -11,9 +11,14 @@
 
 namespace Bungee {
 
-// This class is a wrapper for Bungee::Stretch<> that provides an easy to use API
-// for "streaming" applications where Bungee is used for forward playback only.
-// See ../cmd/main.cpp for example usage.
+/**
+ * @brief Wrapper for Bungee::Stretch<> for forward playback streaming applications.
+ *
+ * Provides an easy-to-use API for streaming audio using Bungee's stretcher.
+ * Example usage can be found in ../cmd/main.cpp.
+ *
+ * @tparam Implementation The implementation type for the stretcher.
+ */
 template <class Implementation>
 class Stream
 {
@@ -29,15 +34,15 @@ class Stream
 		Stretcher<Implementation> &stretcher;
 		InputChunk inputChunk{};
 
-		InputBuffer(Stretcher<Implementation> &stretcher, int maxSampleCount, int channelCount) :
-			channelStride(maxSampleCount),
+		InputBuffer(Stretcher<Implementation> &stretcher, int maxFrameCount, int channelCount) :
+			channelStride(maxFrameCount),
 			channelCount(channelCount),
 			buffer(channelStride * channelCount),
 			stretcher(stretcher)
 		{
 		}
 
-		void append(int inputSampleCount, const float *const *inputPointers)
+		void append(int inputFrameCount, const float *const *inputPointers)
 		{
 			int discard = 0;
 
@@ -55,7 +60,7 @@ class Stream
 			}
 			else
 			{
-				discard = std::min(inputChunk.begin - begin, inputSampleCount);
+				discard = std::min(inputChunk.begin - begin, inputFrameCount);
 				begin = end;
 			}
 
@@ -63,15 +68,15 @@ class Stream
 				if (inputPointers)
 					std::copy(
 						&inputPointers[c][discard],
-						&inputPointers[c][inputSampleCount],
+						&inputPointers[c][inputFrameCount],
 						&buffer[(end - begin) + c * channelStride]);
 				else
 					std::fill(
 						&buffer[(end - begin) + c * channelStride],
-						&buffer[(end - begin) + c * channelStride + (inputSampleCount - discard)],
+						&buffer[(end - begin) + c * channelStride + (inputFrameCount - discard)],
 						0.f);
 			begin += discard;
-			end += inputSampleCount;
+			end += inputFrameCount;
 			assert(end >= begin);
 			assert(end - begin <= channelStride);
 		}
@@ -99,34 +104,50 @@ class Stream
 	OutputChunk outputChunk{};
 	int outputChunkConsumed = 0;
 
-	double samplesNeeded = 0.;
+	double framesNeeded = 0.;
 
 public:
-	Stream(Stretcher<Implementation> &stretcher, int maxInputSampleCount, int channelCount) :
+	/**
+	 * @brief Construct a Stream.
+	 * @param stretcher Reference to the stretcher
+	 * @param maxInputFrameCount Maximum number of input frames per process
+	 * @param channelCount Number of channels
+	 */
+	Stream(Stretcher<Implementation> &stretcher, int maxInputFrameCount, int channelCount) :
 		channelCount(channelCount),
-		inputBuffer(stretcher, stretcher.maxInputFrameCount() + maxInputSampleCount, channelCount)
+		inputBuffer(stretcher, stretcher.maxInputFrameCount() + maxInputFrameCount, channelCount)
 	{
 		request.position = std::numeric_limits<double>::quiet_NaN();
 	}
 
-	// Processes a segment of audio. Returns the number of output samples that were rendered to outputPointers.
-	// The number of samples will be set by dithering either to floor(outputSampleCount) or ceil(outputSampleCount).
+	/**
+	 * @brief Process a segment of audio.
+	 *
+	 * Renders output samples to outputPointers. The number of samples is set by dithering to floor or ceil of outputFrameCount.
+	 *
+	 * @param inputPointers Array of pointers to input audio (per channel), nullptr for mute input
+	 * @param outputPointers Array of pointers to output audio (per channel)
+	 * @param inputFrameCount Number of input audio samples to process
+	 * @param outputFrameCount Number of output audio samples required (may be fractional)
+	 * @param pitch Audio pitch shift (see Request::pitch)
+	 * @return Number of output samples rendered
+	 */
 	int process(
-		const float *const *inputPointers, // Array of pointers, one for each channel of input audio: set to nullptr for mute input
-		float *const *outputPointers, // Array of pointers, one for each channel of output audio
-		int inputSampleCount, // Number of input audio samples to be processed
-		double outputSampleCount, // Number of audio output samples requred: this may be fractional. This, together with stretcher sample rate settings, controls playback speed.
-		double pitch = 1.) // Audio pitch shift (see Request::pitch)
+		const float *const *inputPointers,
+		float *const *outputPointers,
+		int inputFrameCount,
+		double outputFrameCount,
+		double pitch = 1.)
 	{
-		inputBuffer.append(inputSampleCount, inputPointers);
+		inputBuffer.append(inputFrameCount, inputPointers);
 
-		request.speed = inputSampleCount / outputSampleCount;
+		request.speed = inputFrameCount / outputFrameCount;
 		request.pitch = pitch;
 
-		samplesNeeded += outputSampleCount;
+		framesNeeded += outputFrameCount;
 
-		int sampleCounter = 0;
-		for (bool processGrain = false; sampleCounter != std::round(samplesNeeded); processGrain = true)
+		int frameCounter = 0;
+		for (bool processGrain = false; frameCounter != std::round(framesNeeded); processGrain = true)
 		{
 			if (processGrain)
 			{
@@ -137,11 +158,11 @@ public:
 					outputChunkConsumed = 0;
 				}
 
-				[[maybe_unused]] const double proportionRemaining = 1. - sampleCounter / std::round(outputSampleCount);
-				const double proportionRemainingDenominator = std::round(outputSampleCount);
-				const double proportionRemainingNumerator = proportionRemainingDenominator - sampleCounter;
+				[[maybe_unused]] const double proportionRemaining = 1. - frameCounter / std::round(outputFrameCount);
+				const double proportionRemainingDenominator = std::round(outputFrameCount);
+				const double proportionRemainingNumerator = proportionRemainingDenominator - frameCounter;
 
-				const auto position = inputBuffer.endPosition() - inputBuffer.stretcher.maxInputFrameCount() / 2 - inputSampleCount * proportionRemainingNumerator / proportionRemainingDenominator;
+				const auto position = inputBuffer.endPosition() - inputBuffer.stretcher.maxInputFrameCount() / 2 - inputFrameCount * proportionRemainingNumerator / proportionRemainingDenominator;
 				request.reset = !(position > request.position);
 				request.position = position;
 				inputBuffer.inputChunk = inputBuffer.stretcher.specifyGrain(request);
@@ -149,7 +170,7 @@ public:
 
 			if (outputChunk.request[0] && !std::isnan(outputChunk.request[0]->position))
 			{
-				const int need = std::round(samplesNeeded) - sampleCounter;
+				const int need = std::round(framesNeeded) - frameCounter;
 				const int available = outputChunk.frameCount - outputChunkConsumed;
 				const int n = std::min(need, available);
 
@@ -157,31 +178,40 @@ public:
 					std::copy(
 						outputChunk.data + outputChunkConsumed + c * outputChunk.channelStride,
 						outputChunk.data + outputChunkConsumed + c * outputChunk.channelStride + n,
-						outputPointers[c] + sampleCounter);
+						outputPointers[c] + frameCounter);
 
-				sampleCounter += n;
+				frameCounter += n;
 				outputChunkConsumed += n;
 			}
 		}
 
-		assert(sampleCounter == std::floor(outputSampleCount) || sampleCounter == std::ceil(outputSampleCount));
-		samplesNeeded -= sampleCounter;
-		return sampleCounter;
+		assert(frameCounter == std::floor(outputFrameCount) || frameCounter == std::ceil(outputFrameCount));
+		framesNeeded -= frameCounter;
+		return frameCounter;
 	};
 
-	// Current position in the input stream. This is sum of inputSampleCount over all process() calls.
+	/**
+	 * @brief Get the current position in the input stream.
+	 * @return Sum of inputFrameCount over all process() calls
+	 */
 	int inputPosition() const
 	{
 		return inputBuffer.endPosition();
 	}
 
-	// Current position of the output stream in terms of input samples.
+	/**
+	 * @brief Get the current output position in terms of input frames.
+	 * @return Output position (input frame units)
+	 */
 	double outputPosition() const
 	{
 		return outputChunk.request[0]->position + outputChunkConsumed * (outputChunk.request[1]->position - outputChunk.request[0]->position) / outputChunk.frameCount;
 	}
 
-	// Latency due to the stretcher. Units are input samples.
+	/**
+	 * @brief Get the latency due to the stretcher.
+	 * @return Latency in input frames
+	 */
 	double latency() const
 	{
 		return inputPosition() - outputPosition();
